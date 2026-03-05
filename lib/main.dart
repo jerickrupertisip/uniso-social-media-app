@@ -1,5 +1,6 @@
 import "dart:convert";
 import "dart:ui";
+import "package:cached_network_image/cached_network_image.dart";
 import "package:http/http.dart" as http;
 import "package:shadcn_flutter/shadcn_flutter.dart";
 import "package:uniso_social_media_app/models/picsum_image.dart";
@@ -35,7 +36,7 @@ class Scroller extends ScrollBehavior {
   @override
   Set<PointerDeviceKind> get dragDevices => {
     PointerDeviceKind.touch,
-    PointerDeviceKind.mouse, // This enables clicking and dragging!
+    PointerDeviceKind.mouse,
     PointerDeviceKind.trackpad,
     PointerDeviceKind.stylus,
   };
@@ -98,6 +99,17 @@ class _Home extends State<Home> {
     super.dispose();
   }
 
+  Container centeredCircularProgress(ThemeData theme, [double? progress]) {
+    return Container(
+      color: Colors.black,
+      alignment: Alignment.center,
+      child: CircularProgressIndicator(
+        size: theme.typography.x8Large.fontSize,
+        value: progress,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ScrollConfiguration(
@@ -105,35 +117,47 @@ class _Home extends State<Home> {
       child: Stack(
         alignment: .center,
         children: [
-          PageView.builder(
-            controller: _pageController,
-            scrollDirection: Axis.vertical,
-            itemCount: _images.length,
-            onPageChanged: (page) {
-              setState(() {
-                _currentPage = page;
-              });
-            },
-            itemBuilder: (context, index) {
-              var image = _images[index];
-              // var size = MediaQuery.of(context).size;
+          _images.isEmpty
+              ? centeredCircularProgress(Theme.of(context))
+              : PageView.builder(
+                  controller: _pageController,
+                  scrollDirection: Axis.vertical,
+                  itemCount: _images.length,
+                  onPageChanged: (page) {
+                    setState(() {
+                      _currentPage = page;
+                    });
+                  },
+                  itemBuilder: (context, index) {
+                    var image = _images[index];
+                    var theme = Theme.of(context);
 
-              return ClipRRect(
-                borderRadius: BorderRadius.circular(Theme.of(context).radiusMd),
-                child: Image.network(
-                  // "https://picsum.photos/seed/${index * 40}/${(size.width * 2).toInt()}/${(size.height * 2).toInt()}",
-                  image.downloadUrl,
-                  fit: BoxFit.cover,
-                  frameBuilder:
-                      (context, child, frame, wasSynchronouslyLoaded) {
-                        if (frame != null) {
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(theme.radiusMd),
+                      child: CachedNetworkImage(
+                        fadeInDuration: Duration(milliseconds: 1),
+                        imageUrl: image.downloadUrl,
+                        fit: BoxFit.cover,
+                        progressIndicatorBuilder: (context, url, progress) {
+                          return centeredCircularProgress(
+                            theme,
+                            progress.progress,
+                          );
+                        },
+                        imageBuilder: (context, imageProvider) {
                           return Stack(
                             children: [
-                              Positioned.fill(child: child),
+                              Positioned.fill(
+                                child: Image(
+                                  image: imageProvider,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                               Positioned(
-                                bottom: 0.0,
-                                left: 0.0,
-                                child: Container(
+                                bottom: 0,
+                                left: 0,
+                                child: Padding(
+                                  padding: EdgeInsets.all(theme.radiusXl),
                                   child: Text(
                                     image.author,
                                     style: TextStyle(
@@ -145,24 +169,15 @@ class _Home extends State<Home> {
                                       ],
                                     ),
                                   ).h1,
-                                ).withPadding(all: Theme.of(context).radiusXl),
+                                ),
                               ),
                             ],
                           );
-                        }
-
-                        return Container(
-                          color: Colors.black,
-                          alignment: Alignment.center,
-                          child: CircularProgressIndicator(
-                            size: Theme.of(context).typography.x8Large.fontSize,
-                          ),
-                        );
-                      },
+                        },
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
 
           Positioned(
             top: 0.0,
