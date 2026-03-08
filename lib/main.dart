@@ -245,7 +245,7 @@ class CenteredCircularProgress extends StatelessWidget {
       color: Colors.black,
       alignment: Alignment.center,
       child: CircularProgressIndicator(
-        size: Theme.of(context).typography.x8Large.fontSize,
+        size: Theme.of(context).typography.x4Large.fontSize,
         value: progress,
       ),
     );
