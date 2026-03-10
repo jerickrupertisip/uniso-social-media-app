@@ -1,6 +1,7 @@
 import "dart:convert";
 import "dart:ui";
 import "package:cached_network_image/cached_network_image.dart";
+import "package:flutter/foundation.dart";
 import "package:flutter/services.dart";
 import "package:http/http.dart" as http;
 import "package:shadcn_flutter/shadcn_flutter.dart";
@@ -225,6 +226,7 @@ class _Home extends State<Home> {
   int _currentPicsumPage = 0;
   bool _isLoading = false;
 
+  static const Curve _pageAnimation = Curves.easeOutCubic;
   // Debug
   bool _isLoggedIn = true;
 
@@ -277,6 +279,26 @@ class _Home extends State<Home> {
     super.dispose();
   }
 
+  void nextPage() {
+    int targetPage = (_currentPage + 1).clamp(0, _images.length - 1);
+    _currentPage = targetPage;
+    _pageController.animateToPage(
+      targetPage,
+      duration: const Duration(milliseconds: 300),
+      curve: _pageAnimation,
+    );
+  }
+
+  void previousPage() {
+    int targetPage = (_currentPage - 1).clamp(0, _images.length - 1);
+    _currentPage = targetPage;
+    _pageController.animateToPage(
+      targetPage,
+      duration: const Duration(milliseconds: 300),
+      curve: _pageAnimation,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     var padding = Theme.of(context).density.baseContentPadding;
@@ -303,7 +325,8 @@ class _Home extends State<Home> {
                     return PostPage(image: image, theme: theme);
                   },
                 ),
-
+          if (kDebugMode)
+            Positioned(top: padding, child: Text("Page $_currentPage")),
           Positioned(
             right: padding,
             child: Column(
@@ -311,18 +334,16 @@ class _Home extends State<Home> {
               children: [
                 if (_currentPage > 0)
                   GhostButton(
-                    onPressed: () => _pageController.previousPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    ),
+                    onPressed: () {
+                      previousPage();
+                    },
                     shape: .circle,
                     child: Icon(RadixIcons.chevronUp),
                   ),
                 GhostButton(
-                  onPressed: () => _pageController.nextPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  ),
+                  onPressed: () {
+                    nextPage();
+                  },
                   shape: .circle,
                   child: Icon(RadixIcons.chevronDown),
                 ),
@@ -411,6 +432,7 @@ class Pressable extends StatelessWidget {
 
 class CenteredCircularProgress extends StatelessWidget {
   final double? progress;
+
   const CenteredCircularProgress({super.key, this.progress});
 
   @override
