@@ -10,12 +10,21 @@ import "package:flutter_lorem/flutter_lorem.dart";
 import "package:supabase_flutter/supabase_flutter.dart";
 import "package:flutter_dotenv/flutter_dotenv.dart";
 
+Future<void> initializeSupabase() async {
+  var apiUrl = dotenv.env["API_URL"];
+  var anonKey = dotenv.env["ANON_KEY"];
+
+  if (apiUrl != null && anonKey != null) {
+    await Supabase.initialize(url: apiUrl, anonKey: anonKey);
+  }
+}
+
 void main() async {
-  await dotenv.load();
-  await Supabase.initialize(
-    url: dotenv.env["API_URL"]!,
-    anonKey: dotenv.env["ANON_KEY"]!,
-  );
+  try {
+    await dotenv.load(isOptional: true);
+  } finally {}
+
+  await initializeSupabase();
 
   runApp(App());
 }
