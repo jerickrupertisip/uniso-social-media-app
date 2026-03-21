@@ -4,10 +4,12 @@ import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:http/http.dart" as http;
+import "package:uniso_social_media_app/models/message.dart";
 import "package:uniso_social_media_app/models/picsum_image.dart";
 import "package:flutter_lorem/flutter_lorem.dart";
 import "package:supabase_flutter/supabase_flutter.dart";
 import "package:flutter_dotenv/flutter_dotenv.dart";
+import "package:intl/intl.dart";
 
 Future<void> initializeSupabase() async {
   var apiUrl = dotenv.env["API_URL"];
@@ -252,7 +254,7 @@ class _ChatScreen extends State<ChatScreen> {
           ],
         ),
         Divider(),
-        const Expanded(child: UnisonConversation()),
+        UnisonConversation(),
         Row(
           children: [
             const Expanded(
@@ -360,68 +362,152 @@ class UnisonConversation extends StatefulWidget {
 
 class _UnisonConversation extends State<UnisonConversation> {
   final ScrollController _chatScrollController = ScrollController();
+  List<Message> messages = [];
+  double _currentOffset = 0;
+  bool _loadingMessages = false;
+
+  Future<List<Message>> fetchMessages() async {
+    var messenger = ScaffoldMessenger.of(context);
+
+    try {
+      messenger.showSnackBar(SnackBar(content: Text("Loading messages")));
+
+      final messages = await Supabase.instance.client
+          .from("messages")
+          .select("content, created_at")
+          .order("created_at");
+
+      return Message.fromList(messages);
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+    return [];
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _chatScrollController.addListener(() {
+      setState(() {
+        _currentOffset = _chatScrollController.offset;
+      });
+    });
+  }
+
+  void loadMessages() {
+    setState(() async {
+      setState(() {
+        _loadingMessages = true;
+      });
+      messages = await fetchMessages();
+      setState(() {
+        _loadingMessages = false;
+      });
+    });
+  }
+
+  void _scrollToBottom() {
+    _chatScrollController.animateTo(
+      0.0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      controller: _chatScrollController,
-      itemCount: 50,
-      reverse: true,
-      padding: const EdgeInsets.fromLTRB(0, 8, 16, 8),
-      itemBuilder: (context, index) {
-        bool isOther = index % 2 == 0;
+    return Expanded(
+      child: Stack(
+        alignment: .center,
+        children: [
+          ListView.builder(
+            controller: _chatScrollController,
+            itemCount: messages.length + 1,
+            reverse: true,
+            padding: const EdgeInsets.fromLTRB(0, 8, 16, 8),
+            itemBuilder: (context, index) {
+              if (index == messages.length) {
+                return Center(
+                  child: _loadingMessages
+                      ? CircularProgressIndicator()
+                      : TextButton(
+                          onPressed: () {
+                            loadMessages();
+                          },
+                          child: const Text("Load more messages"),
+                        ),
+                );
+              }
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Avatar
-              CircleAvatar(
-                backgroundColor: isOther ? Colors.orange : Colors.indigo,
-                child: const Icon(Icons.person, color: Colors.white),
-              ),
-              const SizedBox(width: 12),
-              // Message Content
-              Expanded(
-                child: Column(
+              bool isOther = index % 2 == 0;
+              var message = messages[index];
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header: Username and Timestamp
-                    Row(
-                      children: [
-                        Text(
-                          isOther ? "User A" : "User B",
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          "Today at 4:30 PM",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Theme.of(
-                              context,
-                            ).textTheme.bodySmall?.color?.withValues(),
-                          ),
-                        ),
-                      ],
+                    // Avatar
+                    CircleAvatar(
+                      backgroundColor: isOther ? Colors.orange : Colors.indigo,
+                      child: const Icon(Icons.person, color: Colors.white),
                     ),
-                    const SizedBox(height: 2),
-                    // Message Body
-                    Text(
-                      lorem(paragraphs: 1, words: 10),
-                      style: const TextStyle(fontSize: 15),
+                    const SizedBox(width: 12),
+                    // Message Content
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header: Username and Timestamp
+                          Row(
+                            children: [
+                              Text(
+                                isOther ? "User A" : "User B",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                DateFormat(
+                                  "M/d/yy, h:mm a",
+                                ).format(message.createdAt),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodySmall?.color?.withValues(),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          // Message Body
+                          Text(
+                            message.content,
+                            style: const TextStyle(fontSize: 15),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              ),
-            ],
+              );
+            },
           ),
-        );
-      },
+          if (_currentOffset > 0)
+            Positioned(
+              bottom: 16,
+              child: IconButton.filled(
+                onPressed: _scrollToBottom,
+                // icon: Text(_currentOffset.toString()),
+                icon: Icon(Icons.arrow_downward),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -491,8 +577,8 @@ class _Home extends State<Home> {
 
   @override
   void dispose() {
-    _pageController.dispose();
     super.dispose();
+    _pageController.dispose();
   }
 
   void nextPage() {
