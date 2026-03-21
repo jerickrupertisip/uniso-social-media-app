@@ -224,11 +224,24 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreen extends State<ChatScreen> {
   final TextEditingController _inputMessageController = TextEditingController();
+  late RealtimeChannel roomChannel;
   var _isSending = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    roomChannel = Supabase.instance.client.channel(
+      "room:messages",
+      opts: RealtimeChannelConfig(self: true),
+    );
+  }
 
   @override
   void dispose() {
     _inputMessageController.dispose();
+    roomChannel.unsubscribe();
+
     super.dispose();
   }
 
@@ -244,9 +257,13 @@ class _ChatScreen extends State<ChatScreen> {
         _isSending = true;
       });
 
-      await Supabase.instance.client.from("messages").insert({
-        "content": content,
-      });
+      var data = await Supabase.instance.client
+          .from("messages")
+          .insert({"content": content})
+          .select()
+          .single();
+
+      roomChannel.sendBroadcastMessage(event: "message_sent", payload: data);
 
       setState(() {
         _isSending = false;
@@ -294,7 +311,7 @@ class _ChatScreen extends State<ChatScreen> {
           ],
         ),
         Divider(),
-        UnisonConversation(),
+        UnisonConversation(roomChannel: roomChannel),
         Row(
           children: [
             Expanded(
@@ -399,7 +416,8 @@ class _CreateNewUnisonDialog extends State<CreateNewUnisonDialog> {
 }
 
 class UnisonConversation extends StatefulWidget {
-  const UnisonConversation({super.key});
+  final RealtimeChannel roomChannel;
+  const UnisonConversation({super.key, required this.roomChannel});
 
   @override
   State<UnisonConversation> createState() => _UnisonConversation();
@@ -412,21 +430,12 @@ class _UnisonConversation extends State<UnisonConversation> {
   bool _loadingMessages = false;
 
   Future<List<Message>> fetchMessages() async {
-    var messenger = ScaffoldMessenger.of(context);
+    final messages = await Supabase.instance.client
+        .from("messages")
+        .select("content, created_at")
+        .order("created_at", ascending: true);
 
-    try {
-      messenger.showSnackBar(SnackBar(content: Text("Loading messages")));
-
-      final messages = await Supabase.instance.client
-          .from("messages")
-          .select("content, created_at")
-          .order("created_at");
-
-      return Message.fromList(messages);
-    } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.toString())));
-    }
-    return [];
+    return Message.fromList(messages);
   }
 
   @override
@@ -438,17 +447,45 @@ class _UnisonConversation extends State<UnisonConversation> {
         _currentOffset = _chatScrollController.offset;
       });
     });
+
+    widget.roomChannel
+        .onBroadcast(
+          event: "message_sent",
+          callback: (payload) {
+            setState(() {
+              messages.add(Message.fromMap(payload));
+              _scrollToBottom();
+            });
+          },
+        )
+        .subscribe();
   }
 
-  void loadMessages() {
-    setState(() async {
+  @override
+  void dispose() {
+    widget.roomChannel.unsubscribe();
+    super.dispose();
+  }
+
+  void loadMessages() async {
+    var messenger = ScaffoldMessenger.of(context);
+
+    setState(() {
+      _loadingMessages = true;
+    });
+
+    try {
+      var newMessages = await fetchMessages();
+
       setState(() {
-        _loadingMessages = true;
+        messages = newMessages;
       });
-      messages = await fetchMessages();
-      setState(() {
-        _loadingMessages = false;
-      });
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+
+    setState(() {
+      _loadingMessages = false;
     });
   }
 
@@ -486,7 +523,7 @@ class _UnisonConversation extends State<UnisonConversation> {
               }
 
               bool isOther = index % 2 == 0;
-              var message = messages[index];
+              var message = messages[messages.length - index - 1];
 
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -672,9 +709,7 @@ class _Home extends State<Home> {
             top: 16,
             child: Text(
               "Page $_currentPage",
-              style: TextStyle(
-                color: Colors.white,
-              ),
+              style: TextStyle(color: Colors.white),
             ),
           ),
         Positioned(
