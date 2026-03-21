@@ -74,8 +74,8 @@ class _App extends State<App> {
           currentIndex: _selectedIndex,
           onTap: _onItemTapped,
           items: [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Unisons'),
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+            BottomNavigationBarItem(icon: Icon(Icons.people), label: "Unisons"),
           ],
         ),
       ),
@@ -260,7 +260,7 @@ class _ChatScreen extends State<ChatScreen> {
             const Expanded(
               child: TextField(
                 decoration: InputDecoration(
-                  hintText: 'Enter your message...',
+                  hintText: "Enter your message...",
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -325,7 +325,7 @@ class _CreateNewUnisonDialog extends State<CreateNewUnisonDialog> {
               ),
               validator: (value) {
                 if (value == null || value.length < 4) {
-                  return 'Name must be at least 4 characters';
+                  return "Name must be at least 4 characters";
                 }
                 return null;
               },
