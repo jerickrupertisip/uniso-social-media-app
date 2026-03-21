@@ -536,7 +536,14 @@ class _Home extends State<Home> {
                   return PostPage(image: image);
                 },
               ),
-        if (kDebugMode) Positioned(top: 16, child: Text("Page $_currentPage")),
+        if (kDebugMode)
+          Positioned(
+            top: 16,
+            child: Text(
+              "Page $_currentPage",
+              style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+            ),
+          ),
         Positioned(
           right: 16,
           child: Column(
@@ -591,6 +598,7 @@ class _Home extends State<Home> {
                 Text(
                   "Your name",
                   style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
                     shadows: [
                       Shadow(
                         offset: Offset.fromDirection(10, 2),
@@ -683,6 +691,7 @@ class _PostPage extends State<PostPage> {
                 child: Text(
                   widget.image.author,
                   style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
                     shadows: [
                       Shadow(
                         offset: Offset.fromDirection(10, 2),
