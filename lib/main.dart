@@ -1,10 +1,9 @@
 import "dart:convert";
-import "dart:ui";
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/foundation.dart";
+import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:http/http.dart" as http;
-import "package:shadcn_flutter/shadcn_flutter.dart";
 import "package:uniso_social_media_app/models/picsum_image.dart";
 import "package:flutter_lorem/flutter_lorem.dart";
 import "package:supabase_flutter/supabase_flutter.dart";
@@ -37,21 +36,16 @@ class App extends StatefulWidget {
 }
 
 class _App extends State<App> {
-  Key? _selected = ValueKey(0);
+  int _selectedIndex = 0;
   final PageController _controller = PageController();
 
-  void _goToPage(int index) {
-    final newKey = ValueKey(index);
-    if (_selected == newKey) return;
-
+  void _onItemTapped(int index) {
     setState(() {
-      _selected = newKey;
+      _selectedIndex = index;
     });
-
-    // _controller.jumpToPage(index);
     _controller.animateToPage(
       index,
-      duration: Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
   }
@@ -62,45 +56,25 @@ class _App extends State<App> {
     super.dispose();
   }
 
-  NavigationItem buildButton(String label, IconData icon, Key key) {
-    return NavigationItem(
-      key: key,
-      style: ButtonStyle.muted(density: ButtonDensity.icon),
-      selectedStyle: ButtonStyle.fixed(density: ButtonDensity.icon),
-      label: Text(label),
-      child: Icon(icon),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    var theme = ThemeData.dark(radius: 0.75);
-    return ShadcnApp(
-      scrollBehavior: UnisonScrollBehavior(),
-      darkTheme: theme,
-      theme: theme,
+    return MaterialApp(
+      theme: ThemeData(),
+      darkTheme: ThemeData.dark(),
       themeMode: ThemeMode.system,
-      // scaling: const AdaptiveScaling(1),
       home: Scaffold(
-        footers: [
-          NavigationBar(
-            selectedKey: _selected,
-            alignment: .spaceEvenly,
-            onSelected: (key) {
-              var index = (key as ValueKey<int>).value;
-              _goToPage(index);
-            },
-            children: [
-              buildButton("Home", BootstrapIcons.house, ValueKey(0)),
-              buildButton("Unisons", BootstrapIcons.people, ValueKey(1)),
-            ],
-          ),
-        ],
-        child: PageView(
+        body: PageView(
           controller: _controller,
-          physics: NeverScrollableScrollPhysics(),
-          scrollDirection: .horizontal,
-          children: [Home(), Unisons()],
+          physics: const NeverScrollableScrollPhysics(),
+          children: const [Home(), Unisons()],
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          items: [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+            BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Unisons'),
+          ],
         ),
       ),
     );
@@ -108,7 +82,7 @@ class _App extends State<App> {
 }
 
 class MemberList extends StatefulWidget {
-  MemberList({super.key});
+  const MemberList({super.key});
 
   @override
   State<MemberList> createState() => _MemberList();
@@ -119,21 +93,28 @@ class _MemberList extends State<MemberList> {
   Widget build(BuildContext context) {
     return SizedBox(
       width: 200,
-      child: SingleChildScrollView(
-        child: Column(
-          spacing: Theme.of(context).density.baseGap,
-          children: List.generate(50, (index) {
-            return SecondaryButton(
-              child: Row(
-                children: [
-                  Icon(RadixIcons.person),
-                  Text(lorem(paragraphs: 1, words: 1)),
-                ],
-              ),
-            );
-          }),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          child: Column(
+            children:
+                List.generate(50, (index) {
+                      return TextButton(
+                        onPressed: () {},
+                        child: Row(
+                          children: [
+                            const Icon(Icons.person),
+                            Text(lorem(paragraphs: 1, words: 1)),
+                          ],
+                        ),
+                      );
+                    })
+                    .expand((widget) => [widget, const SizedBox(height: 8)])
+                    .toList()
+                  ..removeLast(),
+          ),
         ),
-      ).withPadding(all: Theme.of(context).density.baseContentPadding),
+      ),
     );
   }
 }
@@ -146,102 +127,97 @@ class Unisons extends StatefulWidget {
 }
 
 class _Unisons extends State<Unisons> {
-  Key? _selectedUnison = null;
+  int? _selectedUnisonIndex;
 
   @override
   Widget build(BuildContext context) {
-    var padding = Theme.of(context).density.baseContentPadding;
-    var gap = Theme.of(context).density.baseGap;
     return Row(
-      crossAxisAlignment: .stretch,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        NavigationRail(
-          labelPosition: .end,
-          labelType: .all,
-          header: [
-            Text("Unisons List"),
-            Gap(gap),
-            TextField(
-              placeholder: Text("Search unions..."),
-              onChanged: (value) {},
-              features: [
-                InputFeature.clear(),
-                InputLeadingFeature(Icon(RadixIcons.magnifyingGlass)),
-              ],
-            ),
-          ],
-          footer: [
-            PrimaryButton(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    return CreateNewUnisonDialog();
-                  },
-                );
-              },
-              child: Text("Create new Unison"),
-            ),
-          ],
-          spacing: Theme.of(context).density.baseGap,
-          alignment: .center,
-          onSelected: (key) {
-            setState(() {
-              _selectedUnison = key;
-            });
-          },
-          selectedKey: _selectedUnison,
-          children: [
-            SingleChildScrollView(
-              child: Column(
-                children: List.generate(50, (index) {
-                  return NavigationItem(
-                    key: ValueKey(index),
-                    selectedStyle: ButtonStyle.secondary(),
-                    style: ButtonStyle.ghost(),
-                    label: Text(lorem(paragraphs: 1, words: 1)),
-                    child: Icon(RadixIcons.person),
-                  );
-                }),
-              ),
-            ),
-          ],
-        ),
-        Expanded(
+        SizedBox(
+          width: 250,
           child: Column(
-            spacing: Theme.of(context).density.baseGap,
             children: [
-              Row(
-                mainAxisAlignment: .end,
-                spacing: Theme.of(context).density.baseGap,
-                children: [
-                  PrimaryButton(
-                    onPressed: () {
-                      openSheet(
-                        context: context,
-                        builder: (context) {
-                          return MemberList();
-                        },
-                        position: .right,
-                      );
-                    },
-                    child: Text("Members List"),
-                  ),
-                ],
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text("Unisons List"),
               ),
-              Expanded(child: UnisonConversation()),
-              Row(
-                spacing: Theme.of(context).density.baseGap,
-                children: [
-                  Expanded(child: TextField()),
-                  IconButton.primary(
-                    onPressed: () {},
-                    icon: Icon(LucideIcons.sendHorizontal),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: TextField(
+                  decoration: const InputDecoration(
+                    hintText: "Search unions...",
+                    prefixIcon: Icon(Icons.search),
                   ),
-                ],
+                  onChanged: (value) {},
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: 50,
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      leading: const Icon(Icons.person),
+                      title: Text(lorem(paragraphs: 1, words: 1)),
+                      selected: _selectedUnisonIndex == index,
+                      onTap: () {
+                        setState(() {
+                          _selectedUnisonIndex = index;
+                        });
+                      },
+                    );
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: ElevatedButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return const CreateNewUnisonDialog();
+                      },
+                    );
+                  },
+                  child: const Text("Create new Unison"),
+                ),
               ),
             ],
-          ).withPadding(all: padding),
+          ),
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          builder: (context) {
+                            return const MemberList();
+                          },
+                        );
+                      },
+                      child: const Text("Members List"),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Expanded(child: UnisonConversation()),
+                Row(
+                  children: [
+                    const Expanded(child: TextField()),
+                    IconButton(onPressed: () {}, icon: const Icon(Icons.send)),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
@@ -256,34 +232,48 @@ class CreateNewUnisonDialog extends StatefulWidget {
 }
 
 class _CreateNewUnisonDialog extends State<CreateNewUnisonDialog> {
-  final TextFieldKey _nameKey = TextFieldKey("name");
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text("Create new Unison"),
+      title: const Text("Create new Unison"),
       content: Form(
+        key: _formKey,
         child: Column(
-          mainAxisSize: .min,
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            FormField(
-              key: _nameKey,
-              label: Text("Name"),
-              validator: LengthValidator(min: 4),
-              child: TextField(hintText: "Name"),
+            TextFormField(
+              decoration: const InputDecoration(
+                labelText: "Name",
+                hintText: "Name",
+              ),
+              validator: (value) {
+                if (value == null || value.length < 4) {
+                  return 'Name must be at least 4 characters';
+                }
+                return null;
+              },
             ),
           ],
         ),
       ),
       actions: [
-        SecondaryButton(
+        TextButton(
           onPressed: () {
             Navigator.of(context).pop();
           },
-          child: Text("Cancel"),
+          child: const Text("Cancel"),
         ),
-        PrimaryButton(onPressed: () {}, child: Text("Create")),
+        ElevatedButton(
+          onPressed: () {
+            if (_formKey.currentState!.validate()) {
+              // Create
+            }
+          },
+          child: const Text("Create"),
+        ),
       ],
     );
   }
@@ -306,42 +296,30 @@ class _UnisonConversation extends State<UnisonConversation> {
       itemCount: 20,
       reverse: true,
       itemBuilder: (context, index) {
-        var isOther = index % 2 == 0;
-
+        bool isOther = index % 2 == 0;
         return Column(
           children: [
-            ChatBubble(
-              color: isOther ? Colors.gray : Colors.blue,
-              type: ChatBubbleType.tail.copyWith(
-                tailAlignment: () => AxisAlignmentDirectional.end,
-                position: () =>
-                    isOther ? AxisDirectional.start : AxisDirectional.end,
+            Align(
+              alignment: isOther ? Alignment.centerLeft : Alignment.centerRight,
+              child: Container(
+                margin: EdgeInsets.only(
+                  left: isOther ? 16 : 64,
+                  right: isOther ? 64 : 16,
+                  bottom: 8,
+                ),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isOther ? Colors.grey[800] : Colors.blue,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(lorem(paragraphs: 1, words: 4)),
               ),
-              alignment: isOther
-                  ? AxisAlignmentDirectional.start
-                  : AxisAlignmentDirectional.end,
-              child: Text(lorem(paragraphs: 1, words: 4)),
-            ).withPadding(
-              horizontal: isOther
-                  ? 0
-                  : Theme.of(context).density.baseContainerPadding,
             ),
-            Gap(Theme.of(context).density.baseGap),
           ],
         );
       },
     );
   }
-}
-
-class UnisonScrollBehavior extends ShadcnScrollBehavior {
-  @override
-  Set<PointerDeviceKind> get dragDevices => {
-    PointerDeviceKind.touch,
-    PointerDeviceKind.mouse,
-    PointerDeviceKind.trackpad,
-    PointerDeviceKind.stylus,
-  };
 }
 
 class Home extends StatefulWidget {
@@ -435,12 +413,11 @@ class _Home extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    var padding = Theme.of(context).density.baseContentPadding;
     return Stack(
-      alignment: .center,
+      alignment: Alignment.center,
       children: [
         _images.isEmpty
-            ? CenteredCircularProgress()
+            ? const CenteredCircularProgress()
             : PageView.builder(
                 controller: _pageController,
                 scrollDirection: Axis.vertical,
@@ -452,32 +429,24 @@ class _Home extends State<Home> {
                 },
                 itemBuilder: (context, index) {
                   var image = _images[index];
-                  var theme = Theme.of(context);
-
-                  return PostPage(image: image, theme: theme);
+                  return PostPage(image: image);
                 },
               ),
-        if (kDebugMode)
-          Positioned(top: padding, child: Text("Page $_currentPage")),
+        if (kDebugMode) Positioned(top: 16, child: Text("Page $_currentPage")),
         Positioned(
-          right: padding,
+          right: 16,
           child: Column(
-            spacing: Theme.of(context).density.baseGap,
             children: [
               if (_currentPage > 0)
-                GhostButton(
-                  onPressed: () {
-                    previousPage();
-                  },
-                  shape: .circle,
-                  child: Icon(RadixIcons.chevronUp),
+                TextButton(
+                  onPressed: previousPage,
+                  style: TextButton.styleFrom(shape: const CircleBorder()),
+                  child: const Icon(Icons.keyboard_arrow_up),
                 ),
-              GhostButton(
-                onPressed: () {
-                  nextPage();
-                },
-                shape: .circle,
-                child: Icon(RadixIcons.chevronDown),
+              TextButton(
+                onPressed: nextPage,
+                style: TextButton.styleFrom(shape: const CircleBorder()),
+                child: const Icon(Icons.keyboard_arrow_down),
               ),
             ],
           ),
@@ -485,49 +454,53 @@ class _Home extends State<Home> {
         Positioned(
           top: 0.0,
           left: 0.0,
-          child: Row(
-            spacing: padding,
-            children: [
-              _isLoggedIn
-                  ? Pressable(
-                      onPressed: () {
-                        setState(() {
-                          _isLoggedIn = !_isLoggedIn;
-                        });
-                      },
-                      child: Avatar(
-                        initials: Avatar.getInitials("unison"),
-                        provider: CachedNetworkImageProvider(
-                          "https://avatars.githubusercontent.com/u/64018564?v=4",
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                _isLoggedIn
+                    ? Pressable(
+                        onPressed: () {
+                          setState(() {
+                            _isLoggedIn = !_isLoggedIn;
+                          });
+                        },
+                        child: CircleAvatar(
+                          backgroundImage: NetworkImage(
+                            "https://avatars.githubusercontent.com/u/64018564?v=4",
+                          ),
+                          radius: 24,
                         ),
-                        size: Theme.of(context).typography.h1.fontSize,
+                      )
+                    : IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _isLoggedIn = !_isLoggedIn;
+                          });
+                        },
+                        style: IconButton.styleFrom(
+                          shape: const CircleBorder(),
+                        ),
+                        icon: const Icon(Icons.person, color: Colors.white),
                       ),
-                    )
-                  : IconButton.primary(
-                      onPressed: () {
-                        setState(() {
-                          _isLoggedIn = !_isLoggedIn;
-                        });
-                      },
-                      shape: .circle,
-                      icon: Icon(
-                        RadixIcons.person,
-                        color: Theme.of(context).colorScheme.background,
+                const SizedBox(width: 16),
+                Text(
+                  "Your name",
+                  style: TextStyle(
+                    shadows: [
+                      Shadow(
+                        offset: Offset.fromDirection(10, 2),
+                        blurRadius: 6,
                       ),
-                    ),
-              Text(
-                "Your name",
-                style: TextStyle(
-                  shadows: [
-                    Shadow(offset: Offset.fromDirection(10, 2), blurRadius: 6),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ).withPadding(all: padding),
+              ],
+            ),
+          ),
         ),
       ],
-    ).withPadding(all: padding);
+    );
   }
 }
 
@@ -568,19 +541,15 @@ class CenteredCircularProgress extends StatelessWidget {
     return Container(
       color: Colors.black,
       alignment: Alignment.center,
-      child: CircularProgressIndicator(
-        size: Theme.of(context).typography.x4Large.fontSize,
-        value: progress,
-      ),
+      child: CircularProgressIndicator(value: progress),
     );
   }
 }
 
 class PostPage extends StatefulWidget {
   final PicsumImage image;
-  final ThemeData theme;
 
-  const PostPage({super.key, required this.image, required this.theme});
+  const PostPage({super.key, required this.image});
 
   @override
   State<PostPage> createState() => _PostPage();
@@ -589,45 +558,40 @@ class PostPage extends StatefulWidget {
 class _PostPage extends State<PostPage> {
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(widget.theme.radiusMd),
-      child: CachedNetworkImage(
-        fadeInDuration: Duration.zero,
-        imageUrl: widget.image.downloadUrl,
-        fit: BoxFit.cover,
-        progressIndicatorBuilder: (context, url, progress) {
-          return CenteredCircularProgress(progress: progress.progress);
-        },
-        imageBuilder: (context, imageProvider) {
-          return Stack(
-            children: [
-              Positioned.fill(
-                child: Image(image: imageProvider, fit: BoxFit.cover),
-              ),
-              Positioned(
-                bottom: 0,
-                left: 0,
-                child: Padding(
-                  padding: EdgeInsets.all(
-                    widget.theme.density.baseContentPadding,
-                  ),
-                  child: Text(
-                    widget.image.author,
-                    style: TextStyle(
-                      shadows: [
-                        Shadow(
-                          offset: Offset.fromDirection(10, 2),
-                          blurRadius: 6,
-                        ),
-                      ],
-                    ),
+    return CachedNetworkImage(
+      fadeInDuration: Duration.zero,
+      imageUrl: widget.image.downloadUrl,
+      fit: BoxFit.cover,
+      progressIndicatorBuilder: (context, url, progress) {
+        return CenteredCircularProgress(progress: progress.progress);
+      },
+      imageBuilder: (context, imageProvider) {
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: Image(image: imageProvider, fit: BoxFit.cover),
+            ),
+            Positioned(
+              bottom: 0,
+              left: 0,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  widget.image.author,
+                  style: TextStyle(
+                    shadows: [
+                      Shadow(
+                        offset: Offset.fromDirection(10, 2),
+                        blurRadius: 6,
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
-          );
-        },
-      ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
