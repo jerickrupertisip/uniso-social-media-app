@@ -196,10 +196,20 @@ class _Unisons extends State<Unisons> {
                   children: [
                     ElevatedButton(
                       onPressed: () {
-                        showModalBottomSheet(
+                        showDialog(
                           context: context,
+                          barrierDismissible: true,
                           builder: (context) {
-                            return const MemberList();
+                            return Align(
+                              alignment: Alignment.centerRight,
+                              child: Material(
+                                child: SizedBox(
+                                  width: 200,
+                                  height: double.infinity,
+                                  child: const MemberList(),
+                                ),
+                              ),
+                            );
                           },
                         );
                       },
