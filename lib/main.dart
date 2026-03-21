@@ -8,7 +8,6 @@ import "package:uniso_social_media_app/models/picsum_image.dart";
 import "package:flutter_lorem/flutter_lorem.dart";
 import "package:supabase_flutter/supabase_flutter.dart";
 import "package:flutter_dotenv/flutter_dotenv.dart";
-import "package:chat_bubbles/chat_bubbles.dart";
 
 Future<void> initializeSupabase() async {
   var apiUrl = dotenv.env["API_URL"];
@@ -120,23 +119,25 @@ class _MemberList extends State<MemberList> {
   }
 }
 
-class Unisons extends StatefulWidget {
-  const Unisons({super.key});
+class UnisonsSidebar extends StatefulWidget {
+  const UnisonsSidebar({super.key});
 
   @override
-  State<Unisons> createState() => _Unisons();
+  State<UnisonsSidebar> createState() => _UnisonsSidebar();
 }
 
-class _Unisons extends State<Unisons> {
+class _UnisonsSidebar extends State<UnisonsSidebar> {
   int? _selectedUnisonIndex;
+  var groups = List.generate(50, (index) {
+    return lorem(paragraphs: 1, words: 1);
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Column(
       children: [
-        SizedBox(
-          width: 250,
+        ColoredBox(
+          color: Theme.of(context).canvasColor,
           child: Column(
             children: [
               Row(
@@ -185,74 +186,109 @@ class _Unisons extends State<Unisons> {
                   onChanged: (value) {},
                 ),
               ),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: 50,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      leading: const Icon(Icons.person),
-                      title: Text(lorem(paragraphs: 1, words: 1)),
-                      selected: _selectedUnisonIndex == index,
-                      onTap: () {
-                        setState(() {
-                          _selectedUnisonIndex = index;
-                        });
-                      },
-                    );
-                  },
-                ),
-              ),
             ],
           ),
         ),
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          barrierDismissible: true,
-                          builder: (context) {
-                            return Align(
-                              alignment: Alignment.centerRight,
-                              child: Material(
-                                child: SizedBox(
-                                  width: 200,
-                                  height: double.infinity,
-                                  child: const MemberList(),
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                      child: const Text("Members List"),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                const Expanded(child: UnisonConversation()),
-                Row(
-                  children: [
-                    const Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Enter your message...',
-                          border: OutlineInputBorder(),
+          child: ListView.builder(
+            itemCount: groups.length,
+            itemBuilder: (context, index) {
+              return ListTile(
+                leading: const Icon(Icons.person),
+                title: Text(groups[index]),
+                selected: _selectedUnisonIndex == index,
+                selectedTileColor: Theme.of(context).colorScheme.primary,
+                selectedColor: Theme.of(context).colorScheme.onPrimary,
+                onTap: () {
+                  setState(() {
+                    _selectedUnisonIndex = index;
+                  });
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class ChatScreen extends StatefulWidget {
+  const ChatScreen({super.key});
+
+  @override
+  State<ChatScreen> createState() => _ChatScreen();
+}
+
+class _ChatScreen extends State<ChatScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  barrierDismissible: true,
+                  builder: (context) {
+                    return Align(
+                      alignment: Alignment.centerRight,
+                      child: Material(
+                        child: SizedBox(
+                          width: 200,
+                          height: double.infinity,
+                          child: const MemberList(),
                         ),
                       ),
-                    ),
-                    IconButton(onPressed: () {}, icon: const Icon(Icons.send)),
-                  ],
-                ),
-              ],
+                    );
+                  },
+                );
+              },
+              child: const Text("Members List"),
             ),
+          ],
+        ),
+        Divider(),
+        const Expanded(child: UnisonConversation()),
+        Row(
+          children: [
+            const Expanded(
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Enter your message...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            IconButton(onPressed: () {}, icon: const Icon(Icons.send)),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class Unisons extends StatefulWidget {
+  const Unisons({super.key});
+
+  @override
+  State<Unisons> createState() => _Unisons();
+}
+
+class _Unisons extends State<Unisons> {
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(width: 250, child: UnisonsSidebar()),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ChatScreen(),
           ),
         ),
       ],
