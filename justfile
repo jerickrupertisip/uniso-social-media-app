@@ -11,6 +11,15 @@ open-studio:
   start "$STUDIO_URL"
 
 [linux]
+gen-env:
+  supabase status -o env > supabase/.env
+
+[linux]
+gen-types-local:
+  mkdir supabase/src
+  supabase gen types --local > supabase/src/database.ts
+
+[linux]
 start:
   supabase start
 

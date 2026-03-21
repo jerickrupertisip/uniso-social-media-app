@@ -20,7 +20,7 @@ Future<void> initializeSupabase() async {
 
 void main() async {
   try {
-    await dotenv.load(isOptional: true);
+    await dotenv.load(fileName: "supabase/.env", isOptional: true);
   } finally {}
 
   await initializeSupabase();
