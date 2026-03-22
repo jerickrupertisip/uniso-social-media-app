@@ -56,6 +56,12 @@ const main = async () => {
   const startDate = new Date(2025, 0, 1, 0, 0);
   let incrementedMinutes = 0;
 
+  const { unions } = await seed.unions((x) =>
+    x(count.unions, ({ index }) => ({
+      name: (x) => copycat.streetName(x.seed),
+    }))
+  );
+
   await seed.public_messages((ctx) => ctx(count.messages, {
     // Incrementing content number
     content: () => {
@@ -67,7 +73,7 @@ const main = async () => {
       incrementedMinutes++; // Move to the next minute for the next row
       return nextDate.toISOString();
     },
-  }))
+  }), { connect: { unions } })
 
   process.exit();
 };
