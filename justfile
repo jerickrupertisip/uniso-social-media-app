@@ -27,6 +27,13 @@ start:
 stop:
   supabase stop
 
+[linux]
+seed-reset:
+  #!/usr/bin/env bash
+  cd supabase
+  pnpm seed
+  supabase db reset
+
 show-db-url:
   #!/usr/bin/env bash
   eval $(cat ./supabase/docker/.env | grep --extended-regexp '(POSTGRES_PASSWORD|POSTGRES_EXTERNAL_PORT)')
