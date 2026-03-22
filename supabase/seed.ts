@@ -52,7 +52,7 @@ const main = async () => {
   const seed = await createSeedClient({ dryRun: true });
 
   await seed.$resetDatabase();
-  await seed.public_messages((ctx) => ctx(30, {
+  await seed.public_messages((ctx) => ctx(count.messages, {
     content: (x) => copycat.sentence(x.seed, { min: 4, max: getRandomInt(6, 20) }),
     created_at: (x) => copycat.dateString(x.seed, {
       min: new Date(2025, 0),
