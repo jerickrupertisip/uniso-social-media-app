@@ -16,7 +16,7 @@ function getRandomInt(min: number, max: number) {
 const count = {
   users: 100,
   unions: 200,
-  messages: 500,
+  messages: 100,
 }
 
 // const full = async (seed: SeedClient) => {
@@ -52,19 +52,22 @@ const main = async () => {
   const seed = await createSeedClient({ dryRun: true });
 
   await seed.$resetDatabase();
-  let messageCount = 0;
-  await seed.public_messages((ctx) => ctx(count.messages, {
-    // content: (x) => copycat.sentence(x.seed, { min: 4, max: getRandomInt(6, 20) }),
-    content: () => {
-      messageCount++;
-      return `Message number ${messageCount}`;
-    },
-    created_at: (x) => copycat.dateString(x.seed, {
-      min: new Date(2025, 0),
-      max: new Date(2026, 0)
-    }),
-  }))
 
+  const startDate = new Date(2025, 0, 1, 0, 0);
+  let incrementedMinutes = 0;
+
+  await seed.public_messages((ctx) => ctx(count.messages, {
+    // Incrementing content number
+    content: () => {
+      return (incrementedMinutes + 1).toString();
+    },
+    // Incrementing timestamp by 1 minute per record
+    created_at: () => {
+      const nextDate = new Date(startDate.getTime() + incrementedMinutes * 60000);
+      incrementedMinutes++; // Move to the next minute for the next row
+      return nextDate.toISOString();
+    },
+  }))
 
   process.exit();
 };
