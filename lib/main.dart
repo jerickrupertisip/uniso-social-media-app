@@ -7,6 +7,7 @@ import "package:flutter/services.dart";
 import "package:http/http.dart" as http;
 import "package:uniso_social_media_app/models/message.dart";
 import "package:uniso_social_media_app/models/picsum_image.dart";
+import "package:uniso_social_media_app/models/unison_group.dart";
 import "package:flutter_lorem/flutter_lorem.dart";
 import "package:supabase_flutter/supabase_flutter.dart";
 import "package:flutter_dotenv/flutter_dotenv.dart";
@@ -27,6 +28,16 @@ const _kOverlayTextStyle = TextStyle(
   color: Colors.white,
   shadows: [_kDropShadow],
 );
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+void showSnackBar(BuildContext context, String message) {
+  final messenger = ScaffoldMessenger.of(context);
+  messenger.clearSnackBars();
+  messenger.showSnackBar(SnackBar(content: Text(message)));
+}
 
 // ---------------------------------------------------------------------------
 // Initialisation
@@ -118,20 +129,36 @@ class _SocialMediaAppState extends State<SocialMediaApp> {
 // Unisons screen — top-level layout
 // ---------------------------------------------------------------------------
 
-class UnisonsScreen extends StatelessWidget {
+class UnisonsScreen extends StatefulWidget {
   const UnisonsScreen({super.key});
 
   @override
+  State<UnisonsScreen> createState() => _UnisonsScreenState();
+}
+
+class _UnisonsScreenState extends State<UnisonsScreen> {
+  UnisonGroup? _selectedUnisonGroup;
+
+  void _onUnisonGroupSelected(UnisonGroup unisonGroup) {
+    setState(() => _selectedUnisonGroup = unisonGroup);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Row(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(width: _kSidebarWidth, child: UnisonGroupSidebar()),
-        VerticalDivider(),
+        SizedBox(
+          width: _kSidebarWidth,
+          child: UnisonGroupSidebar(
+            onUnisonGroupSelected: _onUnisonGroupSelected,
+          ),
+        ),
+        const VerticalDivider(),
         Expanded(
           child: Padding(
-            padding: EdgeInsets.all(16.0),
-            child: UnisonChatInputScreen(),
+            padding: const EdgeInsets.all(16.0),
+            child: UnisonChatInputScreen(unisonGroup: _selectedUnisonGroup),
           ),
         ),
       ],
@@ -144,7 +171,9 @@ class UnisonsScreen extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class UnisonGroupSidebar extends StatefulWidget {
-  const UnisonGroupSidebar({super.key});
+  final void Function(UnisonGroup) onUnisonGroupSelected;
+
+  const UnisonGroupSidebar({super.key, required this.onUnisonGroupSelected});
 
   @override
   State<UnisonGroupSidebar> createState() => _UnisonGroupSidebarState();
@@ -152,17 +181,28 @@ class UnisonGroupSidebar extends StatefulWidget {
 
 class _UnisonGroupSidebarState extends State<UnisonGroupSidebar> {
   int? _selectedGroupIndex;
-  final List<String> _unisonGroupNames = List.generate(
-    50,
-    (_) => lorem(paragraphs: 1, words: 1),
-  );
+  List<UnisonGroup> _unisonGroups = [];
+  final ScrollController _unisonGroupsScrollController = ScrollController();
 
   void _onGroupTapped(int groupIndex) {
+    if (_selectedGroupIndex == groupIndex) {
+      return;
+    }
     setState(() => _selectedGroupIndex = groupIndex);
+    widget.onUnisonGroupSelected(_unisonGroups[groupIndex]);
   }
 
   void _openCreateUnisonDialog() {
     showDialog(context: context, builder: (_) => const CreateNewUnisonDialog());
+  }
+
+  Future<void> _fetchGroups() async {
+    try {
+      final groups = await Supabase.instance.client.from("unions").select("*");
+      setState(() => _unisonGroups = UnisonGroup.fromList(groups));
+    } catch (fetchError) {
+      if (mounted) showSnackBar(context, fetchError.toString());
+    }
   }
 
   @override
@@ -176,19 +216,32 @@ class _UnisonGroupSidebarState extends State<UnisonGroupSidebar> {
   }
 
   Widget _buildGroupList() {
-    return ListView.builder(
-      itemCount: _unisonGroupNames.length,
-      itemBuilder: (listContext, groupIndex) {
-        final isSelected = _selectedGroupIndex == groupIndex;
-        return ListTile(
-          leading: const Icon(Icons.person),
-          title: Text(_unisonGroupNames[groupIndex]),
-          selected: isSelected,
-          selectedTileColor: Theme.of(listContext).colorScheme.primary,
-          selectedColor: Theme.of(listContext).colorScheme.onPrimary,
-          onTap: () => _onGroupTapped(groupIndex),
-        );
-      },
+    return EasyRefresh(
+      header: MaterialHeader(),
+      refreshOnStart: true,
+      footer: MaterialFooter(
+        position: IndicatorPosition.above,
+        clamping: false,
+      ),
+      onRefresh: _fetchGroups,
+      child: ListView.builder(
+        controller: _unisonGroupsScrollController,
+        itemCount: _unisonGroups.length,
+        padding: const EdgeInsets.fromLTRB(0, 8, 16, 8),
+        itemBuilder: _buildGroupListItem,
+      ),
+    );
+  }
+
+  Widget _buildGroupListItem(BuildContext listContext, int groupIndex) {
+    final unisonGroup = _unisonGroups[groupIndex];
+    return ListTile(
+      leading: const Icon(Icons.person),
+      title: Text(unisonGroup.name),
+      selected: _selectedGroupIndex == groupIndex,
+      selectedTileColor: Theme.of(listContext).colorScheme.primary,
+      selectedColor: Theme.of(listContext).colorScheme.onPrimary,
+      onTap: () => _onGroupTapped(groupIndex),
     );
   }
 }
@@ -250,7 +303,7 @@ class _UnisonActionsMenu extends StatelessWidget {
           child: const Text("Create new Unison"),
         ),
       ],
-      builder: (_, menuController, _) {
+      builder: (_, menuController, __) {
         return IconButton(
           onPressed: () => menuController.isOpen
               ? menuController.close()
@@ -330,7 +383,9 @@ class _CreateNewUnisonDialogState extends State<CreateNewUnisonDialog> {
 // ---------------------------------------------------------------------------
 
 class UnisonChatInputScreen extends StatefulWidget {
-  const UnisonChatInputScreen({super.key});
+  final UnisonGroup? unisonGroup;
+
+  const UnisonChatInputScreen({super.key, required this.unisonGroup});
 
   @override
   State<UnisonChatInputScreen> createState() => _UnisonChatInputScreenState();
@@ -339,14 +394,24 @@ class UnisonChatInputScreen extends StatefulWidget {
 class _UnisonChatInputScreenState extends State<UnisonChatInputScreen> {
   final TextEditingController _outgoingMessageController =
       TextEditingController();
-  late final RealtimeChannel _supabaseRoomChannel;
+  RealtimeChannel? _supabaseRoomChannel;
   bool _isMessageSending = false;
 
+  bool get _isGroupSelected => widget.unisonGroup != null;
+
   @override
-  void initState() {
-    super.initState();
-    _supabaseRoomChannel = Supabase.instance.client.channel(
-      "room:messages",
+  void didUpdateWidget(UnisonChatInputScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.unisonGroup?.id != widget.unisonGroup?.id) {
+      _supabaseRoomChannel?.unsubscribe();
+      _supabaseRoomChannel = _openChannelForGroup(widget.unisonGroup?.id);
+    }
+  }
+
+  RealtimeChannel? _openChannelForGroup(String? groupId) {
+    if (groupId == null) return null;
+    return Supabase.instance.client.channel(
+      "room:$groupId:messages",
       opts: RealtimeChannelConfig(self: true),
     );
   }
@@ -354,11 +419,17 @@ class _UnisonChatInputScreenState extends State<UnisonChatInputScreen> {
   @override
   void dispose() {
     _outgoingMessageController.dispose();
-    _supabaseRoomChannel.unsubscribe();
+    _supabaseRoomChannel?.unsubscribe();
     super.dispose();
   }
 
   Future<void> _submitOutgoingMessage() async {
+    final groupId = widget.unisonGroup?.id;
+    if (groupId == null) return;
+
+    final channel = _supabaseRoomChannel;
+    if (channel == null) return;
+
     final messageContent = _outgoingMessageController.text;
     if (messageContent.isEmpty) return;
 
@@ -368,19 +439,17 @@ class _UnisonChatInputScreenState extends State<UnisonChatInputScreen> {
     try {
       final insertedMessageData = await Supabase.instance.client
           .from("messages")
-          .insert({"content": messageContent})
+          .insert({"content": messageContent, "union_id": groupId})
           .select()
           .single();
 
-      _supabaseRoomChannel.sendBroadcastMessage(
+      channel.sendBroadcastMessage(
         event: "message_sent",
         payload: insertedMessageData,
       );
     } catch (sendError) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(sendError.toString())));
+        showSnackBar(context, sendError.toString());
         setState(() => _outgoingMessageController.text = messageContent);
       }
     } finally {
@@ -411,7 +480,7 @@ class _UnisonChatInputScreenState extends State<UnisonChatInputScreen> {
       children: [
         _buildMembersListButton(),
         const Divider(),
-        UnisonMessageFeed(realtimeRoomChannel: _supabaseRoomChannel),
+        _buildFeedArea(),
         _buildMessageInputRow(),
       ],
     );
@@ -422,10 +491,27 @@ class _UnisonChatInputScreenState extends State<UnisonChatInputScreen> {
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         ElevatedButton(
-          onPressed: _openMemberListPanel,
+          onPressed: _isGroupSelected ? _openMemberListPanel : null,
           child: const Text("Members List"),
         ),
       ],
+    );
+  }
+
+  Widget _buildFeedArea() {
+    final groupId = widget.unisonGroup?.id;
+    final channel = _supabaseRoomChannel;
+
+    if (groupId == null || channel == null) {
+      return const Expanded(
+        child: Center(child: Text("Select a Unison Group on the left")),
+      );
+    }
+
+    return UnisonMessageFeed(
+      key: ValueKey(groupId),
+      unisonID: groupId,
+      realtimeRoomChannel: channel,
     );
   }
 
@@ -434,6 +520,7 @@ class _UnisonChatInputScreenState extends State<UnisonChatInputScreen> {
       children: [
         Expanded(
           child: TextField(
+            enabled: _isGroupSelected,
             controller: _outgoingMessageController,
             onSubmitted: (_) => _submitOutgoingMessage(),
             decoration: const InputDecoration(
@@ -443,7 +530,9 @@ class _UnisonChatInputScreenState extends State<UnisonChatInputScreen> {
           ),
         ),
         IconButton(
-          onPressed: _isMessageSending ? null : _submitOutgoingMessage,
+          onPressed: _isGroupSelected
+              ? (_isMessageSending ? null : _submitOutgoingMessage)
+              : null,
           icon: const Icon(Icons.send),
         ),
       ],
@@ -466,8 +555,8 @@ class UnisonMemberList extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: ListView.separated(
           itemCount: 50,
-          separatorBuilder: (_, _) => const SizedBox(height: 8),
-          itemBuilder: (_, _) => const _MemberListItem(),
+          separatorBuilder: (_, __) => const SizedBox(height: 8),
+          itemBuilder: (_, __) => const _MemberListItem(),
         ),
       ),
     );
@@ -497,8 +586,13 @@ class _MemberListItem extends StatelessWidget {
 
 class UnisonMessageFeed extends StatefulWidget {
   final RealtimeChannel realtimeRoomChannel;
+  final String unisonID;
 
-  const UnisonMessageFeed({super.key, required this.realtimeRoomChannel});
+  const UnisonMessageFeed({
+    super.key,
+    required this.unisonID,
+    required this.realtimeRoomChannel,
+  });
 
   @override
   State<UnisonMessageFeed> createState() => _UnisonMessageFeedState();
@@ -506,11 +600,10 @@ class UnisonMessageFeed extends StatefulWidget {
 
 class _UnisonMessageFeedState extends State<UnisonMessageFeed> {
   final ScrollController _messageFeedScrollController = ScrollController();
+  final List<Message> _loadedMessages = [];
+  final int _messagePageSize = 20;
   double _messageFeedScrollOffset = 0;
   bool _isFetchingMessages = false;
-
-  final List<Message> _loadedMessages = [];
-  final int _messageCount = 20;
 
   @override
   void initState() {
@@ -544,9 +637,13 @@ class _UnisonMessageFeedState extends State<UnisonMessageFeed> {
     final fetchedMessages = await Supabase.instance.client
         .from("messages")
         .select("content, created_at")
-        .limit(_messageCount)
+        .eq("union_id", widget.unisonID)
+        .limit(_messagePageSize)
         .order("created_at", ascending: false)
-        .range(_loadedMessages.length, _loadedMessages.length + _messageCount);
+        .range(
+          _loadedMessages.length,
+          _loadedMessages.length + _messagePageSize,
+        );
 
     return Message.fromList(fetchedMessages).reversed.toList();
   }
@@ -557,14 +654,14 @@ class _UnisonMessageFeedState extends State<UnisonMessageFeed> {
 
     try {
       final fetchedMessages = await _fetchMoreMessagesFromDatabase();
-      setState(() {
-        _loadedMessages.insertAll(0, fetchedMessages);
-      });
+      setState(() => _loadedMessages.insertAll(0, fetchedMessages));
     } catch (fetchError) {
       scaffoldMessenger.showSnackBar(
         SnackBar(content: Text(fetchError.toString())),
       );
-    } finally {
+    }
+
+    if (mounted) {
       setState(() => _isFetchingMessages = false);
     }
   }
@@ -590,10 +687,6 @@ class _UnisonMessageFeedState extends State<UnisonMessageFeed> {
     );
   }
 
-  void _refreshMessages() async {
-    _fetchMoreMessages();
-  }
-
   Widget _buildMessageList() {
     return EasyRefresh(
       header: MaterialHeader(),
@@ -602,8 +695,8 @@ class _UnisonMessageFeedState extends State<UnisonMessageFeed> {
         position: IndicatorPosition.above,
         clamping: false,
       ),
-      onLoad: _refreshMessages,
-      onRefresh: _loadedMessages.isEmpty ? _refreshMessages : null,
+      onLoad: _fetchMoreMessages,
+      onRefresh: _loadedMessages.isEmpty ? _fetchMoreMessages : null,
       child: ListView.builder(
         controller: _messageFeedScrollController,
         itemCount: _loadedMessages.length + 1,
@@ -922,7 +1015,7 @@ class FullScreenPostPage extends StatelessWidget {
       fadeInDuration: Duration.zero,
       imageUrl: postImage.downloadUrl,
       fit: BoxFit.cover,
-      progressIndicatorBuilder: (_, _, downloadProgress) =>
+      progressIndicatorBuilder: (_, __, downloadProgress) =>
           FullScreenLoadingIndicator(
             loadingProgress: downloadProgress.progress,
           ),

@@ -28,11 +28,23 @@ stop:
   supabase stop
 
 [linux]
-seed-reset:
+sync-db:
+  #!/usr/bin/env bash
+  cd supabase
+  pnpm sync
+
+[linux]
+seed-reset-db:
   #!/usr/bin/env bash
   cd supabase
   pnpm seed
   supabase db reset
+
+[linux]
+migrate-db name:
+  #!/usr/bin/env bash
+  cd supabase
+  supabase db diff -f {{name}}
 
 show-db-url:
   #!/usr/bin/env bash

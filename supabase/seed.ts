@@ -15,8 +15,8 @@ function getRandomInt(min: number, max: number) {
 
 const count = {
   users: 100,
-  unions: 200,
-  messages: 100,
+  unions: 6,
+  messages: 400,
 }
 
 // const full = async (seed: SeedClient) => {
