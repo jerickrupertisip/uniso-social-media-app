@@ -46,6 +46,11 @@ migrate-db name:
   cd supabase
   supabase db diff -f {{name}}
 
+push-db-with-seed:
+  #!/usr/bin/env bash
+  cd supabase
+  supabase db push --include-all --include-seed --include-roles
+
 show-db-url:
   #!/usr/bin/env bash
   eval $(cat ./supabase/docker/.env | grep --extended-regexp '(POSTGRES_PASSWORD|POSTGRES_EXTERNAL_PORT)')
