@@ -55,7 +55,7 @@ dependencies:
   easy_refresh: ^3.4.0
 
   # image_picker: Allows users to select images from their device's gallery or take new photos with the camera.
-  image_picker: ^1.1.2
+  image_picker: ^1.2.1
 
 dev_dependencies:
   flutter_test:

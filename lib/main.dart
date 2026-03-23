@@ -12,6 +12,7 @@ import "package:flutter_lorem/flutter_lorem.dart";
 import "package:supabase_flutter/supabase_flutter.dart";
 import "package:flutter_dotenv/flutter_dotenv.dart";
 import "package:intl/intl.dart";
+import "package:uniso_social_media_app/screens/auth/sign_in_screen.dart";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -22,8 +23,9 @@ const _kScrollAnimationDuration = Duration(milliseconds: 300);
 const _kNavAnimationDuration = Duration(milliseconds: 300);
 const _kSidebarWidth = 250.0;
 const _kMemberPanelWidth = 200.0;
-const _kAvatarRadius = 24.0;
 const _kDropShadow = Shadow(offset: Offset(1.9, -0.4), blurRadius: 6);
+const _kAvatarRadius = 24.0;
+const _kIconSize = _kAvatarRadius * 2; // diameter
 const _kOverlayTextStyle = TextStyle(
   color: Colors.white,
   shadows: [_kDropShadow],
@@ -58,8 +60,7 @@ class SupabaseService {
   /// Fetches all rows from the `unions` table and returns them as a typed
   /// list of [UnisonGroup] models.
   static Future<List<UnisonGroup>> fetchUnisonGroups() async {
-    final rows =
-        await Supabase.instance.client.from("unions").select("*");
+    final rows = await Supabase.instance.client.from("unions").select("*");
     return UnisonGroup.fromList(rows);
   }
 
@@ -96,10 +97,7 @@ class SupabaseService {
     required RealtimeChannel channel,
     required Map<String, dynamic> messageData,
   }) {
-    channel.sendBroadcastMessage(
-      event: "message_sent",
-      payload: messageData,
-    );
+    channel.sendBroadcastMessage(event: "message_sent", payload: messageData);
   }
 
   /// Fetches a page of messages for [unisonId], ordered newest-first.
@@ -488,8 +486,9 @@ class _UnisonChatInputScreenState extends State<UnisonChatInputScreen> {
     if (oldWidget.unisonGroup?.id != widget.unisonGroup?.id) {
       _supabaseRoomChannel?.unsubscribe();
       // Delegate channel creation to the service.
-      _supabaseRoomChannel =
-          SupabaseService.openMessageChannel(widget.unisonGroup?.id);
+      _supabaseRoomChannel = SupabaseService.openMessageChannel(
+        widget.unisonGroup?.id,
+      );
     }
   }
 
@@ -967,8 +966,19 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     );
   }
 
-  void _toggleLoginState() {
+  void _goToProfilePage() {
     setState(() => _isCurrentUserLoggedIn = !_isCurrentUserLoggedIn);
+  }
+
+  void _goToLoginPage() {
+    debugPrint("To Login Page");
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) {
+          return SignInScreen();
+        },
+      ),
+    );
   }
 
   @override
@@ -1042,7 +1052,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   Widget _buildUserAvatar() {
     if (_isCurrentUserLoggedIn) {
       return TappableWidget(
-        onPressed: _toggleLoginState,
+        onPressed: _goToProfilePage,
         child: const CircleAvatar(
           backgroundImage: NetworkImage(
             "https://avatars.githubusercontent.com/u/64018564?v=4",
@@ -1053,7 +1063,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     }
 
     return IconButton(
-      onPressed: _toggleLoginState,
+      padding: EdgeInsetsGeometry.zero,
+      iconSize: _kIconSize,
+      onPressed: _goToLoginPage,
       style: IconButton.styleFrom(shape: const CircleBorder()),
       icon: const Icon(Icons.person, color: Colors.white),
     );
