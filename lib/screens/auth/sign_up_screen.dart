@@ -1,8 +1,8 @@
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import "package:flutter/foundation.dart";
+import "package:flutter/material.dart";
+import "package:intl/intl.dart";
+import "package:image_picker/image_picker.dart";
+import "package:supabase_flutter/supabase_flutter.dart";
 
 /// Screen for new users to create a Uni-So account.
 class SignUpScreen extends StatefulWidget {
@@ -21,14 +21,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _emailController = TextEditingController();
   final _birthdateController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   // UI state variables.
   bool _obscurePassword = true;
   bool _userAgreement = false;
   bool _isLoading = false;
-  
+
   // Profile picture state.
-  String? _profilePicUrl = 'https://via.placeholder.com/150';
+  String? _profilePicUrl = "https://via.placeholder.com/150";
   Uint8List? _imageBytes;
   final ImagePicker _picker = ImagePicker();
 
@@ -52,12 +52,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
     if (picked != null) {
       setState(() {
-        _birthdateController.text = DateFormat('yyyy-MM-dd').format(picked);
+        _birthdateController.text = DateFormat("yyyy-MM-dd").format(picked);
       });
     }
   }
 
-  /// Handles picking an image from the device's gallery.
+  /// Handles picking an image from the device"s gallery.
   Future<void> _pickImage() async {
     try {
       final XFile? pickedFile = await _picker.pickImage(
@@ -75,9 +75,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking image: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error picking image: $e")));
       }
     }
   }
@@ -93,7 +93,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.casino),
-                title: const Text('Pick a random avatar'),
+                title: const Text("Pick a random avatar"),
                 onTap: () {
                   Navigator.pop(context);
                   _showAvatarGridPicker();
@@ -101,7 +101,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.file_upload),
-                title: const Text('Upload from file manager'),
+                title: const Text("Upload from file manager"),
                 onTap: () {
                   Navigator.pop(context);
                   _pickImage();
@@ -120,7 +120,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Choose an Avatar'),
+          title: const Text("Choose an Avatar"),
           content: SizedBox(
             width: double.maxFinite,
             child: GridView.builder(
@@ -132,7 +132,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               itemCount: 9,
               itemBuilder: (context, index) {
-                final avatarUrl = 'https://picsum.photos/id/${index + 10}/150/150';
+                final avatarUrl =
+                    "https://picsum.photos/id/${index + 10}/150/150";
                 return InkWell(
                   onTap: () {
                     setState(() {
@@ -141,9 +142,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     });
                     Navigator.pop(context);
                   },
-                  child: CircleAvatar(
-                    backgroundImage: NetworkImage(avatarUrl),
-                  ),
+                  child: CircleAvatar(backgroundImage: NetworkImage(avatarUrl)),
                 );
               },
             ),
@@ -151,7 +150,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: const Text("Cancel"),
             ),
           ],
         );
@@ -170,14 +169,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
         data: {
-          'username': _usernameController.text.trim(),
-          'birthdate': _birthdateController.text,
-          'avatar_url': _profilePicUrl,
+          "username": _usernameController.text.trim(),
+          "birthdate": _birthdateController.text,
+          "avatar_url": _profilePicUrl,
         },
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration successful! Check your email for verification.')),
+          const SnackBar(
+            content: Text(
+              "Registration successful! Check your email for verification.",
+            ),
+          ),
         );
         Navigator.pop(context);
       }
@@ -190,7 +193,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unexpected error occurred'), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text("Unexpected error occurred"),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -202,12 +208,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sign Up'),
+        title: const Text("Sign Up"),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close),
-          tooltip: 'Exit to Home',
+          tooltip: "Exit to Home",
           onPressed: () {
             if (Navigator.canPop(context)) {
               Navigator.pop(context);
@@ -239,8 +245,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 backgroundColor: Colors.grey[800],
                                 backgroundImage: _imageBytes != null
                                     ? MemoryImage(_imageBytes!)
-                                    : (_profilePicUrl != null ? NetworkImage(_profilePicUrl!) : null) as ImageProvider?,
-                                child: (_imageBytes == null && _profilePicUrl == null)
+                                    : (_profilePicUrl != null
+                                              ? NetworkImage(_profilePicUrl!)
+                                              : null)
+                                          as ImageProvider?,
+                                child:
+                                    (_imageBytes == null &&
+                                        _profilePicUrl == null)
                                     ? const Icon(Icons.person, size: 60)
                                     : null,
                               ),
@@ -248,10 +259,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 bottom: 0,
                                 right: 0,
                                 child: CircleAvatar(
-                                  backgroundColor: Theme.of(context).primaryColor,
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).primaryColor,
                                   radius: 20,
                                   child: IconButton(
-                                    icon: const Icon(Icons.camera_alt, size: 20, color: Colors.white),
+                                    icon: const Icon(
+                                      Icons.camera_alt,
+                                      size: 20,
+                                      color: Colors.white,
+                                    ),
                                     onPressed: _showProfilePicOptions,
                                   ),
                                 ),
@@ -260,20 +277,26 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'avatars',
-                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+                            "avatars",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'Create your profile',
+                      "Create your profile",
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const Text(
-                      'Fill in the details below to join the community',
+                      "Fill in the details below to join the community",
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey),
                     ),
@@ -283,12 +306,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     TextFormField(
                       controller: _usernameController,
                       decoration: const InputDecoration(
-                        labelText: 'Username',
+                        labelText: "Username",
                         prefixIcon: Icon(Icons.person_outline),
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty) return 'Please enter your username';
+                        if (value == null || value.isEmpty)
+                          return "Please enter your username";
                         return null;
                       },
                     ),
@@ -297,13 +321,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(
-                        labelText: 'Email Address',
+                        labelText: "Email Address",
                         prefixIcon: Icon(Icons.email_outlined),
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty || !value.contains('@')) {
-                          return 'Please enter a valid email address';
+                        if (value == null ||
+                            value.isEmpty ||
+                            !value.contains("@")) {
+                          return "Please enter a valid email address";
                         }
                         return null;
                       },
@@ -314,13 +340,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       readOnly: true,
                       onTap: () => _selectDate(context),
                       decoration: const InputDecoration(
-                        labelText: 'Birthdate',
+                        labelText: "Birthdate",
                         prefixIcon: Icon(Icons.calendar_today),
                         border: OutlineInputBorder(),
-                        hintText: 'YYYY-MM-DD',
+                        hintText: "YYYY-MM-DD",
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty) return 'Please select your birthdate';
+                        if (value == null || value.isEmpty)
+                          return "Please select your birthdate";
                         return null;
                       },
                     ),
@@ -329,16 +356,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       controller: _passwordController,
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
-                        labelText: 'Password',
+                        labelText: "Password",
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
-                          icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                          ),
+                          onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword,
+                          ),
                         ),
                         border: const OutlineInputBorder(),
                       ),
                       validator: (value) {
-                        if (value == null || value.length < 6) return 'Password must be at least 6 characters';
+                        if (value == null || value.length < 6)
+                          return "Password must be at least 6 characters";
                         return null;
                       },
                     ),
@@ -349,11 +383,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       children: [
                         Checkbox(
                           value: _userAgreement,
-                          onChanged: (value) => setState(() => _userAgreement = value ?? false),
+                          onChanged: (value) =>
+                              setState(() => _userAgreement = value ?? false),
                         ),
                         const Expanded(
                           child: Text(
-                            'I agree to the User Agreement and Privacy Policy',
+                            "I agree to the User Agreement and Privacy Policy",
                             style: TextStyle(fontSize: 12),
                           ),
                         ),
@@ -363,16 +398,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                     // --- 4. SIGN UP ACTION ---
                     ElevatedButton(
-                      onPressed: (_userAgreement && !_isLoading) ? _handleSignUp : null,
+                      onPressed: (_userAgreement && !_isLoading)
+                          ? _handleSignUp
+                          : null,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: _isLoading 
-                        ? const CircularProgressIndicator()
-                        : const Text('Sign Up'),
+                      child: _isLoading
+                          ? const CircularProgressIndicator()
+                          : const Text("Sign Up"),
                     ),
                   ],
                 ),

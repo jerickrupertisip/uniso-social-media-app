@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:uniso_social_media_app/screens/auth/sign_up_screen.dart';
+import "package:flutter/material.dart";
+import "package:supabase_flutter/supabase_flutter.dart";
+import "package:uniso_social_media_app/screens/auth/sign_up_screen.dart";
 
 /// Screen for existing users to log into their Uni-So account.
 class SignInScreen extends StatefulWidget {
@@ -56,7 +56,7 @@ class _SignInScreenState extends State<SignInScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Unexpected error occurred'),
+            content: Text("Unexpected error occurred"),
             backgroundColor: Colors.red,
           ),
         );
@@ -77,7 +77,7 @@ class _SignInScreenState extends State<SignInScreen> {
         // Exit button to return to the main feed.
         leading: IconButton(
           icon: const Icon(Icons.close),
-          tooltip: 'Exit to Home',
+          tooltip: "Exit to Home",
           onPressed: () {
             if (Navigator.canPop(context)) {
               Navigator.pop(context);
@@ -90,7 +90,7 @@ class _SignInScreenState extends State<SignInScreen> {
           padding: const EdgeInsets.all(24.0),
           child: Center(
             child: ConstrainedBox(
-              // Limiting the width so it's not stretched across the whole screen on web/tablets
+              // Limiting the width so it"s not stretched across the whole screen on web/tablets
               constraints: const BoxConstraints(maxWidth: 400),
               child: Form(
                 key: _formKey,
@@ -101,7 +101,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   children: [
                     // App Branding
                     const Text(
-                      'Uni-So',
+                      "Uni-So",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 48,
@@ -110,7 +110,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       ),
                     ),
                     const Text(
-                      'Connect with your community',
+                      "Connect with your community",
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey),
                     ),
@@ -121,14 +121,14 @@ class _SignInScreenState extends State<SignInScreen> {
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(
-                        labelText: 'Email Address',
-                        hintText: 'Enter your email address',
+                        labelText: "Email Address",
+                        hintText: "Enter your email address",
                         prefixIcon: Icon(Icons.email),
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty || !value.contains('@')) {
-                          return 'Please enter a valid email address';
+                        if (value == null || value.isEmpty || !value.contains("@")) {
+                          return "Please enter a valid email address";
                         }
                         return null;
                       },
@@ -140,8 +140,8 @@ class _SignInScreenState extends State<SignInScreen> {
                       controller: _passwordController,
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
-                        labelText: 'Password',
-                        hintText: 'Enter your password',
+                        labelText: "Password",
+                        hintText: "Enter your password",
                         prefixIcon: const Icon(Icons.lock),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -157,7 +157,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
+                          return "Please enter your password";
                         }
                         return null;
                       },
@@ -175,7 +175,7 @@ class _SignInScreenState extends State<SignInScreen> {
                             });
                           },
                         ),
-                        const Text('Remember password'),
+                        const Text("Remember password"),
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -195,7 +195,7 @@ class _SignInScreenState extends State<SignInScreen> {
                               width: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Login'),
+                          : const Text("Login"),
                     ),
                     const SizedBox(height: 16),
 
@@ -207,7 +207,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           MaterialPageRoute(builder: (context) => const SignUpScreen()),
                         );
                       },
-                      child: const Text('Don\'t have an account? Sign Up'),
+                      child: const Text("Don\"t have an account? Sign Up"),
                     ),
                   ],
                 ),

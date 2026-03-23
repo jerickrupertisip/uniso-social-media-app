@@ -16,9 +16,7 @@
     "@snaplet/copycat": "^6.0.0",
     "@snaplet/seed": "0.98.0",
     "@types/pg": "^8.20.0",
-    "pg": "^8.20.0"
-  },
-  "dependencies": {
+    "pg": "^8.20.0",
     "supabase": "^2.83.0"
   }
 }
